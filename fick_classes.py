@@ -233,12 +233,11 @@ class scd_apparatus():
         return    
 
 
-#def main(width, length, diff_coef, number_samples):
-def main():
-    width = 0.1
-    length = 0.5
-    diff_coef = 1e-8
-    number_samples = 1000
+def main(width, length, diff_coef, number_samples):
+    #width = 0.1
+    #length = 0.5
+    #diff_coef = 1e-8
+    #number_samples = 1000
     key_list = ['one_dim', 'cyl', 'sphere']
     key_sch = 'implicit'
     
@@ -273,4 +272,4 @@ def main():
     plt.show()
 
     
-main()
+#main()
