@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
+import os
+#``123
 
 num_steps = 100 # количество шагов
 l = np.empty(num_steps+2, dtype=np.int16)
@@ -217,6 +219,7 @@ def plot_conc(r_list, time, c_list):
     plt.xlabel('Radius, m')
     plt.grid(True)
     plt.ylabel('Concentration of alcohol')
+    #plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_conc.jpeg')
     return
 
 
@@ -228,6 +231,7 @@ def plot_mass(r_list, mass_list, legend_key):
     plt.xlabel('Time, second')
     plt.grid(True)
     plt.ylabel('Mass of alcohol, kg')
+    #plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_mass.jpeg')
     return
 
 
@@ -242,7 +246,7 @@ def plot_3D(r_list, time, c_list, name):
     plt.xlabel('Radius, m')
     plt.grid(True)
     plt.ylabel('Time, second')
-    #plt.zlabel('Concentration of CO2')
+    #plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot3D.jpeg')
     return
 
 
@@ -259,6 +263,7 @@ def ideal_mixing_plot(time, c_mixing):
     plt.xlabel('Time, second')
     plt.grid(True)
     plt.ylabel('Concentration of alcohol')
+    #plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_mixing.jpeg')
     return    
 
 
@@ -285,13 +290,15 @@ def main():
     for i in key_list:
         matrix_of_c, list_of_mass, c_app = time_iteration(c_init_list, n_t, dt, dr, key=i)
         plot_mass(time, list_of_mass, i)
-        
+        plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_mass '+ str(i))    
         plot_conc(r_list, time-1, matrix_of_c)
+        plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_conc '+ str(i))
         ideal_mixing_plot(time, c_app)
+        plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot_mixing '+ str(i))
         plot_3D(r_list, time, matrix_of_c, i)
+        plt.savefig(r'C:\Users\danko\OneDrive\Рабочий стол\Диплом\Diplom\Images\plot3D ' + str(i))
         
     plt.show()
 
-
+    
 main()
-print(5)
