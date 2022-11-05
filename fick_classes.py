@@ -4,7 +4,8 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-img_path = 'C:/Users/danko/OneDrive/Рабочий стол/Диплом/Diplom/Images'
+file_path = os.path.dirname(os.path.abspath(__file__))
+img_path = os.path.join(file_path, 'Images')
 
 num_steps = 100 # количество шагов
 l = np.empty(num_steps+2, dtype=np.int16)
@@ -269,7 +270,6 @@ def main(width, length, diff_coef, number_samples):
         object1.plot_3D(r_list, time, matrix_of_c, str(i))
         plt.savefig(os.path.join(img_path_key, "plot_3D.png"))
         
-    plt.show()
+
 
     
-#main()
