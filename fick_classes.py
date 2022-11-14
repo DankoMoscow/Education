@@ -31,6 +31,10 @@ class scd_apparatus():
         self.key = key
         self.key_sch = key_sch
         self.number_samples = number_samples
+
+        self.matrix_of_c = np.zeros((n_t, len(c_init_list)))
+        self.list_of_mass = np.zeros(n_t)
+        self.c_app = np.zeros(n_t)
         
         self.c_init_list = np.zeros(num_steps + 2)
         for i in range(num_steps + 2):
@@ -153,9 +157,11 @@ class scd_apparatus():
         volume = 1.  # cubic meter
         flowrate = 0.0001  # cubic meter per second
         residence_time = volume / flowrate
+
         c_matrix = np.zeros((n_t, len(c_init_list)))
         mass_list = np.zeros(n_t)
         c_matrix[0] = c_init_list
+
         mass_list[0] = self.fick_mass(c_matrix[0], self.length, self.width)
         c_app[0] = 0.
         for i in range(1, n_t):
@@ -178,16 +184,19 @@ class scd_apparatus():
                 mass_list[i] = self.fick_mass(c_matrix[i], self.length, self.width)
                 delta_mass = - self.number_samples * (mass_list[i] - mass_list[i - 1])
                 c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, volume, delta_mass)
-    
+                """
+                тут попытаюсь сделать добавление в изменении концентрации с моделью
+                идеального смешения
+                """
+                c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
             # TODO добавить расчет идеального смешения с учетом прибыли массы из высушиваемых частиц
-    
-        return c_matrix, mass_list, c_app
-    
-    
+
+        return c_mixing, mass_list, c_app
+
     def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
         c_mixing = c + dt * 1 / residence_time * (c_inlet - c) + dt * delta_mass / volume
         return c_mixing
-    
+
     
     def plot_conc(self, r_list, time, c_list):
         time_ratio = 100 #с какой частотой писать легенду для графика
@@ -216,7 +225,7 @@ class scd_apparatus():
         xgrid, ygrid = np.meshgrid(r_list, time)
         zgrid = c_list
         ax_3d = Axes3D(fig)
-        fig.add_axes(ax_3d)
+        fig.add_axes()
         ax_3d.plot_surface(xgrid, ygrid, zgrid, cmap=cm.jet)
         plt.title(('3D concentration ' + name), fontsize=12)
         plt.xlabel('Radius, m')
@@ -261,15 +270,15 @@ def main(width, length, diff_coef, number_samples):
         r_list = np.linspace(0, R, num_steps + 2)
 
         matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, n_t, dt, dr, key=i)
+
         object1.plot_mass(time, list_of_mass, i)
-        plt.savefig(os.path.join(img_path_key, "plot_mass.png"))    
+        plt.savefig("plot_mass.png")
         object1.plot_conc(r_list, time-1, matrix_of_c)
-        plt.savefig(os.path.join(img_path_key, "plot_conc.png"))
+        plt.savefig("plot_conc.png")
         object1.ideal_mixing_plot(time, c_app)
-        plt.savefig(os.path.join(img_path_key, "plot_mixing.png"))
+        plt.savefig("plot_mixing.png")
         object1.plot_3D(r_list, time, matrix_of_c, str(i))
-        plt.savefig(os.path.join(img_path_key, "plot_3D.png"))
+        plt.savefig("plot_3D.png")
+
+        return matrix_of_c, list_of_mass, c_app, time, i, r_list
         
-
-
-    

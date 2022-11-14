@@ -1,4 +1,6 @@
 import panel as pn
+import holoviews as hv
+from bokeh.plotting import figure
 
 import fick_classes
 pn.extension()
@@ -10,7 +12,21 @@ int_number_samples = pn.widgets.IntSlider(name='Number of samples', start=0, end
 
 button = pn.widgets.Button(name='Click me', button_type='primary')
 
-abf = pn.Column(float_width, float_length, float_diff_coef, int_number_samples, button)
+#виджеты для отображения
+main_colomn = pn.Column(float_width, float_length, float_diff_coef, int_number_samples, button)
+plot = figure(width=300, height=300)
+
+#общий виджет
+abf = pn.Row(pn.Spacer(width=200), main_colomn, plot, sizing_mode='stretch_width')
+
+def run(event):
+    global abf, float_width, float_length, float_diff_coef, int_number_samples
+
+    matrix_of_c, list_of_mass, c_app, time, i, r_list = fick_classes.main(float_width.value, float_length.value, float_diff_coef.value, int_number_samples.value)
+    #plot = hv.Curve(list(list_of_mass), sizing_mode='stretch_width').opts(width=600)
+    plot = figure(r_list, time-1, matrix_of_c)
+    abf[1] = plot
+
+
+button.on_click(run)
 abf.show()
-if True:
-    button.param.watch(fick_classes.main(float_width.value, float_length.value, float_diff_coef.value, int_number_samples.value), 'clicks')
