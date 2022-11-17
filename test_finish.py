@@ -10,22 +10,39 @@ float_length = pn.widgets.FloatSlider(name='Length of samples', start=0.1, end=1
 float_diff_coef = pn.widgets.FloatSlider(name='Diffusion coef', start=0.000000001, end=0.00000001, step=0.000000001, value=0.00000001)
 int_number_samples = pn.widgets.IntSlider(name='Number of samples', start=0, end=1500, step=100, value=1000)
 
-button = pn.widgets.Button(name='Click me', button_type='primary')
+group_of_actions = pn.widgets.RadioButtonGroup(
+    name='Выбор необходимого графика', options=['График изменения массы', 'График изменения концентрации', 'График 3D'], button_type='success', orientation = 'vertical')
+
+group_of_key = pn.widgets.RadioButtonGroup(
+    name='Выбор необходимого вида образца', options=['Плоскопараллельное тело', 'Цилиндр', 'Сфера'], button_type='success', orientation = 'vertical')
+
+
+button = pn.widgets.Button(name='Нажмите для запуска расчёта', button_type='primary')
 
 #виджеты для отображения
-main_colomn = pn.Column(float_width, float_length, float_diff_coef, int_number_samples, button)
-plot = figure(width=300, height=300)
+main_column = pn.Column(float_width, float_length, float_diff_coef, int_number_samples, group_of_actions, group_of_key, button)
 
-#общий виджет
-abf = pn.Row(pn.Spacer(width=200), main_colomn, plot, sizing_mode='stretch_width')
+iter = 3
+plots = []
+abfs = []
+for j in range(iter):
+    plot = figure(width=300, height=300)
+    plots.append(plot)
+
+    #общий виджет
+    abf = pn.Row(pn.Spacer(width=100), main_column, pn.Spacer(width = 200), plot, sizing_mode='stretch_width')
+    abfs.append(abf)
+
+
 
 def run(event):
     global abf, float_width, float_length, float_diff_coef, int_number_samples
 
     matrix_of_c, list_of_mass, c_app, time, i, r_list = fick_classes.main(float_width.value, float_length.value, float_diff_coef.value, int_number_samples.value)
-    #plot = hv.Curve(list(list_of_mass), sizing_mode='stretch_width').opts(width=600)
-    plot = figure(r_list, time-1, matrix_of_c)
-    abf[1] = plot
+    #plot = hv.Curve(list(matrix_of_c), sizing_mode='stretch_width').opts(width=600)
+
+    plot.line(r_list, list_of_mass)
+    abf
 
 
 button.on_click(run)

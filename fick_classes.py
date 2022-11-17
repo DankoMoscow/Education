@@ -188,10 +188,11 @@ class scd_apparatus():
                 тут попытаюсь сделать добавление в изменении концентрации с моделью
                 идеального смешения
                 """
-                c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
+                #c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
             # TODO добавить расчет идеального смешения с учетом прибыли массы из высушиваемых частиц
 
-        return c_mixing, mass_list, c_app
+        return c_matrix, mass_list, c_app
+        #return c_mixing, mass_list, c_app
 
     def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
         c_mixing = c + dt * 1 / residence_time * (c_inlet - c) + dt * delta_mass / volume
@@ -271,14 +272,14 @@ def main(width, length, diff_coef, number_samples):
 
         matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, n_t, dt, dr, key=i)
 
-        object1.plot_mass(time, list_of_mass, i)
+        """object1.plot_mass(time, list_of_mass, i)
         plt.savefig("plot_mass.png")
         object1.plot_conc(r_list, time-1, matrix_of_c)
         plt.savefig("plot_conc.png")
         object1.ideal_mixing_plot(time, c_app)
         plt.savefig("plot_mixing.png")
         object1.plot_3D(r_list, time, matrix_of_c, str(i))
-        plt.savefig("plot_3D.png")
+        plt.savefig("plot_3D.png")"""
 
         return matrix_of_c, list_of_mass, c_app, time, i, r_list
         
