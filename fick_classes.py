@@ -188,11 +188,11 @@ class scd_apparatus():
                 тут попытаюсь сделать добавление в изменении концентрации с моделью
                 идеального смешения
                 """
-                #c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
+                c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
             # TODO добавить расчет идеального смешения с учетом прибыли массы из высушиваемых частиц
 
-        return c_matrix, mass_list, c_app
-        #return c_mixing, mass_list, c_app
+        #return c_matrix, mass_list, c_app
+        return c_mixing, mass_list, c_app
 
     def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
         c_mixing = c + dt * 1 / residence_time * (c_inlet - c) + dt * delta_mass / volume
@@ -243,13 +243,10 @@ class scd_apparatus():
         plt.ylabel('Concentration of alcohol')
         return    
 
+key_list = ['one_dim', 'cyl', 'sphere']
+def main(width, length, diff_coef, number_samples, value):
 
-def main(width, length, diff_coef, number_samples):
-    #width = 0.1
-    #length = 0.5
-    #diff_coef = 1e-8
-    #number_samples = 1000
-    key_list = ['one_dim', 'cyl', 'sphere']
+    #key_list = ['one_dim', 'cyl', 'sphere']
     key_sch = 'implicit'
     
     c_init_list = np.zeros(num_steps + 2)
@@ -258,28 +255,29 @@ def main(width, length, diff_coef, number_samples):
         if i == num_steps + 1:
             c_init_list[i] = 0
     
-    for i in key_list:
-        
-        img_path_key = os.path.join(img_path, str(i))
+    #for i in key_list:
 
-        object1 = scd_apparatus(width, length, diff_coef, i, key_sch, number_samples)
-        object1.__str__()
-        
-    #object1.ideal_mixing(c_inlet, object1.time_iteration.residence_time, object1.time_iteration.volume, object1.time_iteration.delta_mass)
-        print('n_t:', n_t, 'proc_time:', proc_time)
-        time = np.linspace(0, proc_time, n_t)
-        r_list = np.linspace(0, R, num_steps + 2)
+    #img_path_key = os.path.join(img_path, str(i))
 
-        matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, n_t, dt, dr, key=i)
+    object1 = scd_apparatus(width, length, diff_coef, value, key_sch, number_samples)
+    object1.__str__()
 
-        """object1.plot_mass(time, list_of_mass, i)
-        plt.savefig("plot_mass.png")
-        object1.plot_conc(r_list, time-1, matrix_of_c)
-        plt.savefig("plot_conc.png")
-        object1.ideal_mixing_plot(time, c_app)
-        plt.savefig("plot_mixing.png")
-        object1.plot_3D(r_list, time, matrix_of_c, str(i))
-        plt.savefig("plot_3D.png")"""
+#object1.ideal_mixing(c_inlet, object1.time_iteration.residence_time, object1.time_iteration.volume, object1.time_iteration.delta_mass)
+    print('n_t:', n_t, 'proc_time:', proc_time, value)
+    time = np.linspace(0, proc_time, n_t)
+    r_list = np.linspace(0, R, num_steps + 2)
 
-        return matrix_of_c, list_of_mass, c_app, time, i, r_list
+    matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, n_t, dt, dr, key=i)
+
+    """object1.plot_mass(time, list_of_mass, i)
+    plt.savefig("plot_mass.png")
+    object1.plot_conc(r_list, time-1, matrix_of_c)
+    plt.savefig("plot_conc.png")
+    object1.ideal_mixing_plot(time, c_app)
+    plt.savefig("plot_mixing.png")
+    object1.plot_3D(r_list, time, matrix_of_c, str(i))
+    plt.savefig("plot_3D.png")"""
+
+    return matrix_of_c, list_of_mass, c_app, time, i, r_list
+
         
