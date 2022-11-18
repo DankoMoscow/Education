@@ -1,9 +1,20 @@
+import signal
 import panel as pn
 import holoviews as hv
+import panel.command
 from bokeh.plotting import figure
 from holoviews import opts
+import numpy as np
 import fick_classes
+import os, sys
+from matplotlib import pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+from selenium import webdriver
 
+#driver = webdriver.Chrome()
+
+pid = os.getpid()
 pn.extension()
 
 float_width = pn.widgets.FloatSlider(name='Width of samples', start=0.1, end=0.5, step=0.05, value=0.1)
@@ -27,14 +38,21 @@ iter = 3
 plots = []
 abfs = []
 
-
 plot = hv.Curve([0]).opts(width=600)
 #общий виджет
 abf = pn.Row(pn.Spacer(width=100), main_column, pn.Spacer(width = 200), plot, sizing_mode='stretch_width')
 
 def onClose(event):
+    print(pid)
+    """
+    driver.close()
+    driver.get()"""
 
-   pn.showModal()
+    #os.system("taskkill /F /IM Crome.url")
+    # убивает процесс
+    panel.command.die('By')
+
+    #os.kill(pid, signal.SIGINT)
 
 def run(event):
     global abf, float_width, float_length, float_diff_coef, int_number_samples
@@ -46,15 +64,23 @@ def run(event):
         plot = hv.Curve(list(list_of_mass)).opts( title="График изменения массы",  width=300)
 
     elif group_of_actions.value == 'График изменения концентрации':
-        plot = hv.Curve(list(matrix_of_c)).opts(width=300)
+        plot = hv.Curve(list(matrix_of_c)).opts( title = 'График изменения концентрации',      width=300)
 
     elif group_of_actions.value == 'График 3D':
-        pass
+        X = r_list
+        Y = time
+        X, Y = np.meshgrid(X, Y)
+        Z = matrix_of_c
+
+        #r = [X, Y, Z]
+        #plot = hv.Surface(r, bounds=(-5, -5, 5, 5)).opts(colorbar=True, width=500, height=500)
+
     abf[0] = main_column
     abf[1] = plot
+    abf
 
 
 button.on_click(run)
-abf.show()
 
 button_exit.on_click(onClose)
+abf.show()
