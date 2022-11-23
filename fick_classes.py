@@ -151,6 +151,8 @@ class scd_apparatus():
         return m
        
     def time_iteration(self, c_init_list, n_t, dt, dr, key, key_sch='implicit'):
+        global method_value
+        method_value = 0 #костыль для определения и не вылетания объёма аппарата
         c_app = np.zeros(n_t)
         #volume = 0.00025 #кубические метры из диссертации
         #flow_rate = 0.0000017 #кубических метров в секунду из диссертации
@@ -163,43 +165,44 @@ class scd_apparatus():
         c_matrix[0] = c_init_list
 
         mass_list[0] = self.fick_mass(c_matrix[0], self.length, self.width)
+        c_exit = np.zeros((n_t, len(c_init_list)))
         c_app[0] = 0.
         for i in range(1, n_t):
             c_bound = c_app[i - 1]
             c_matrix[i] = self.fick_conc(c_matrix[i-1],  c_bound, dr, dt, r)
             
             if volume < self.number_samples * 4 / 3 * np.pi * (R)**3 and self.key == 'sphere' :
-                print('Объём аппарата превышен ')
-                raise SystemExit()
-                
+                #print('Объём аппарата превышен ')
+                method_value=5
+                pass
+
             elif volume < self.number_samples * self.length * np.pi *R**2 and self.key == 'cyl' :
-                print('Объём аппарата превышен')
-                raise SystemExit()
-                
+                #print('Объём аппарата превышен')
+                method_value=5
+                pass
+
             elif volume < self.number_samples * self.length * self.width *R and self.key == 'one_dim' :
-                print('Объём аппарата превышен')
-                raise SystemExit()
+                #print('Объём аппарата превышен')
+                method_value=5
+                pass
             
-            else:   
-                mass_list[i] = self.fick_mass(c_matrix[i], self.length, self.width)
-                delta_mass = - self.number_samples * (mass_list[i] - mass_list[i - 1])
-                c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, volume, delta_mass)
-                """
-                тут попытаюсь сделать добавление в изменении концентрации с моделью
-                идеального смешения
-                """
-                c_mixing = c_matrix[i] + dt * 1 / residence_time * (c_init - c_app[i]) + dt * delta_mass / volume
+            else:
+                if method_value!= 5:
+                    mass_list[i] = self.fick_mass(c_matrix[i], self.length, self.width)
+                    delta_mass = - self.number_samples * (mass_list[i] - mass_list[i - 1])
+                    c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, volume, delta_mass)
+                    c_exit[i] = c_matrix[i] + c_app[i]
             # TODO добавить расчет идеального смешения с учетом прибыли массы из высушиваемых частиц
 
-        #return c_matrix, mass_list, c_app
-        return c_mixing, mass_list, c_app
+        return c_exit, mass_list, c_app
+
 
     def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
         c_mixing = c + dt * 1 / residence_time * (c_inlet - c) + dt * delta_mass / volume
         return c_mixing
 
     
-    def plot_conc(self, r_list, time, c_list):
+"""    def plot_conc(self, r_list, time, c_list):
         time_ratio = 100 #с какой частотой писать легенду для графика
         plt.figure()
         c_list = c_list.T
@@ -241,28 +244,21 @@ class scd_apparatus():
         plt.xlabel('Time, second')
         plt.grid(True)
         plt.ylabel('Concentration of alcohol')
-        return    
+        return    """
 
-key_list = ['one_dim', 'cyl', 'sphere']
-def main(width, length, diff_coef, number_samples, value):
-
-    #key_list = ['one_dim', 'cyl', 'sphere']
-    key_sch = 'implicit'
+def main(width, length, diff_coef, number_samples, value, key_sch, working):
     
     c_init_list = np.zeros(num_steps + 2)
     for i in range(num_steps + 2):
         c_init_list[i] = c_init
         if i == num_steps + 1:
             c_init_list[i] = 0
-    
-    #for i in key_list:
 
     #img_path_key = os.path.join(img_path, str(i))
 
     object1 = scd_apparatus(width, length, diff_coef, value, key_sch, number_samples)
     object1.__str__()
 
-#object1.ideal_mixing(c_inlet, object1.time_iteration.residence_time, object1.time_iteration.volume, object1.time_iteration.delta_mass)
     print('n_t:', n_t, 'proc_time:', proc_time, value)
     time = np.linspace(0, proc_time, n_t)
     r_list = np.linspace(0, R, num_steps + 2)
@@ -278,6 +274,6 @@ def main(width, length, diff_coef, number_samples, value):
     object1.plot_3D(r_list, time, matrix_of_c, str(i))
     plt.savefig("plot_3D.png")"""
 
-    return matrix_of_c, list_of_mass, c_app, time, i, r_list
+    return matrix_of_c, list_of_mass, c_app, time, i, r_list, method_value
 
         
