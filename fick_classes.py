@@ -157,7 +157,7 @@ class scd_apparatus():
         #volume = 0.00025 #кубические метры из диссертации
         #flow_rate = 0.0000017 #кубических метров в секунду из диссертации
         volume = 1.  # cubic meter
-        flowrate = 0.0001  # cubic meter per second
+        flowrate = 0.01  # cubic meter per second
         residence_time = volume / flowrate
 
         c_matrix = np.zeros((n_t, len(c_init_list)))
@@ -191,14 +191,14 @@ class scd_apparatus():
                     mass_list[i] = self.fick_mass(c_matrix[i], self.length, self.width)
                     delta_mass = - self.number_samples * (mass_list[i] - mass_list[i - 1])
                     c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, volume, delta_mass)
-                    c_exit[i] = c_matrix[i] + c_app[i]
+                    #c_exit[i] = c_matrix[i] + c_app[i]
             # TODO добавить расчет идеального смешения с учетом прибыли массы из высушиваемых частиц
 
-        return c_exit, mass_list, c_app
+        return c_matrix, mass_list, c_app
 
 
     def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
-        c_mixing = c + dt * 1 / residence_time * (c_inlet - c) + dt * delta_mass / volume
+        c_mixing = c + dt / residence_time * (c_inlet - c) + dt * delta_mass / volume
         return c_mixing
 
     

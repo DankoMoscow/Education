@@ -92,9 +92,9 @@ def run(event):
         #plot = hv.Surface(r, bounds=(-5, -5, 5, 5)).opts(colorbar=True, width=500, height=500)
         work_process()
 
-    abf[0] = main_column
-    abf[1] = plot
-    abf
+    abf[1] = main_column
+    abf[3] = plot
+    #abf
 
 
 button.on_click(run)
