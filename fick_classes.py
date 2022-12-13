@@ -13,8 +13,8 @@ height = 0.02  # высота образца meters
 R = height / 2  # meters
 dr = R / num_steps  # шаг по радиусу meters
 proc_time = 100000
-dt = 50  # шаг по времени seconds
-n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
+# dt = 10  # шаг по времени seconds
+# n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
 
 c_bound = 0.
 c_init = 1.
@@ -168,8 +168,6 @@ class scd_apparatus():
         c_app = np.zeros(n_t)
         # volume = 0.00025 #кубические метры из диссертации
         # flow_rate = 0.0000017 #кубических метров в секунду из диссертации
-        #volume = 1.  # cubic meter
-        #flowrate = 0.01  # cubic meter per second
         residence_time = volume / flowrate
 
         c_matrix = np.zeros((n_t, len(c_init_list)))
@@ -198,11 +196,11 @@ class scd_apparatus():
                 if method_value != 5:
                     mass_list[i] = self.fick_mass(c_matrix[i], self.length, self.width)
                     delta_mass = - self.number_samples * (mass_list[i] - mass_list[i - 1])
-                    c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, volume, delta_mass)
+                    c_app[i] = self.ideal_mixing(c_app[i - 1], 0, residence_time, dt, volume, delta_mass)
 
         return c_matrix, mass_list, c_app
 
-    def ideal_mixing(self, c, c_inlet, residence_time, volume, delta_mass):
+    def ideal_mixing(self, c, c_inlet, residence_time, dt, volume, delta_mass):
         c_mixing = c + dt / residence_time * (c_inlet - c) + dt * delta_mass / volume
         return c_mixing
 
@@ -252,7 +250,10 @@ class scd_apparatus():
         return    """
 
 
-def main(width, length, volume, flowrate, diff_coef, number_samples, value, key_sch, working):
+def main(width, length, volume, flowrate, dt, diff_coef, number_samples, value, key_sch, working, working_scheme):
+    global n_t
+
+    n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
     c_init_list = np.zeros(num_steps + 2)
     for i in range(num_steps + 2):
         c_init_list[i] = c_init
@@ -282,4 +283,4 @@ def main(width, length, volume, flowrate, diff_coef, number_samples, value, key_
     object1.plot_3D(r_list, time, matrix_of_c, str(i))
     plt.savefig("plot_3D.png")"""
     print(sverka_method)
-    return matrix_of_c, list_of_mass, c_app, time, i, r_list, method_value
+    return matrix_of_c, list_of_mass, c_app, time, i, r_list, method_value, sverka_method
