@@ -9,35 +9,36 @@ img_path = os.path.join(file_path, 'Images')
 
 num_steps = 100  # количество шагов
 l = np.empty(num_steps + 2, dtype=np.int16)
-height = 0.02  # высота образца meters
-R = height / 2  # meters
-dr = R / num_steps  # шаг по радиусу meters
+
+# height = 0.02  # высота образца meters
+# R = height / 2  # meters
+# dr = R / num_steps  # шаг по радиусу meters
+
 proc_time = 100000
-# dt = 10  # шаг по времени seconds
-# n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
 
 c_bound = 0.
 c_init = 1.
 
-c_r = np.zeros(num_steps + 2)
-r = np.linspace(0, R, num_steps + 2)
-c_init_list = np.zeros(num_steps + 2)
+# c_r = np.zeros(num_steps + 2)
+# r = np.linspace(0, R, num_steps + 2)
+# c_init_list = np.zeros(num_steps + 2)
 
 
 class scd_apparatus():
-    def __init__(self, width, length, diff_coef, key, key_sch, number_samples):
+    def __init__(self, width, length, height, diff_coef, key, key_sch, number_samples):
         self.width = width
         self.length = length
+        self.height = height
         self.diff_coef = diff_coef
         self.key = key
         self.key_sch = key_sch
         self.number_samples = number_samples
-
-        self.matrix_of_c = np.zeros((n_t, len(c_init_list)))
+        self.c_init_list = np.zeros(num_steps + 2)
+        self.matrix_of_c = np.zeros((n_t, len(self.c_init_list)))
         self.list_of_mass = np.zeros(n_t)
         self.c_app = np.zeros(n_t)
 
-        self.c_init_list = np.zeros(num_steps + 2)
+
         for i in range(num_steps + 2):
             self.c_init_list[i] = c_init
             if i == num_steps + 1:
@@ -62,7 +63,6 @@ class scd_apparatus():
             if self.key_sch == 'explicit':
                 if stab_cond > 1 / (2 * self.diff_coef):
                     sverka_method = 5
-                    #print('Не выполняется условие устойчивости')
                     pass
                 else:
                     c_temp[1:-1] = c[1:-1] + self.diff_coef * (dt / dr ** 2) * (c[2:] - 2 * c[1:-1] + c[0: -2])
@@ -90,7 +90,6 @@ class scd_apparatus():
             if self.key_sch == 'explicit':
                 if 2 * self.diff_coef * stab_cond <= 1:  # (2*diff_coef*dt-dt)/ dr**2 <= 1:     #diff_coef*(dt/dr + 2 * stab_cond) > 1:страница 84 методички
                     sverka_method = 5
-                    #print('Не выполняется условие устойчивости')
                     pass
                 else:
                     for i in range(len(r)):
@@ -99,7 +98,6 @@ class scd_apparatus():
                     c_temp[-1] = c_bound
                     c_temp[0] = c_temp[1]
                     return c_temp
-
 
             elif self.key_sch == 'implicit':  # должна быть абсолютно устойчива это с ЛКР
                 for j in range(1, len(r)):
@@ -120,7 +118,6 @@ class scd_apparatus():
             if self.key_sch == 'explicit':
                 if 2 * self.diff_coef * stab_cond <= 1:  # diff_coef*(dt/dr + 2 * stab_cond) > 1:
                     sverka_method = 5
-                    #print('Не выполняется условие устойчивости')
                     pass
                 else:
                     for i in range(len(r)):
@@ -157,9 +154,7 @@ class scd_apparatus():
                 m += c[i] * length * np.pi * ((i * dr) ** 2 - ((i - 1) * dr) ** 2)
             elif self.key == 'one_dim':
                 m += c[i] * ((2 * i * dr) - ((i - 1) * 2 * dr)) * self.length * self.width
-            else:
-                print("Key input error!")
-                return None
+
         return m
 
     def time_iteration(self, c_init_list, volume, flowrate, n_t, dt, dr, key, key_sch):
@@ -250,11 +245,16 @@ class scd_apparatus():
         return    """
 
 
-def main(width, length, volume, flowrate, dt, diff_coef, number_samples, value, key_sch, working, working_scheme):
-    global n_t
-
+def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples, value, key_sch, working, working_scheme):
+    global n_t, R, dr, c_r, r
+    R = height / 2  # meters
+    dr = R / num_steps  # шаг по радиусу meters
     n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
     c_init_list = np.zeros(num_steps + 2)
+
+    c_r = np.zeros(num_steps + 2)
+    r = np.linspace(0, R, num_steps + 2)
+
     for i in range(num_steps + 2):
         c_init_list[i] = c_init
         if i == num_steps + 1:
@@ -262,7 +262,7 @@ def main(width, length, volume, flowrate, dt, diff_coef, number_samples, value, 
 
     # img_path_key = os.path.join(img_path, str(i))
 
-    object1 = scd_apparatus(width, length, diff_coef, value, key_sch, number_samples)
+    object1 = scd_apparatus(width, length, height, diff_coef, value, key_sch, number_samples)
     object1.__str__()
 
     print('n_t:', n_t, 'proc_time:', proc_time, 'variable of item',value)
