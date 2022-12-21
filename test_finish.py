@@ -15,6 +15,8 @@ from bokeh.models.formatters import PrintfTickFormatter
 import time
 import plotly.express as px
 from datetime import datetime
+# from holoviews import dim, opts
+# from holoviews.plotting.bokeh.styles import (line_properties, fill_properties, text_properties)
 
 pid = os.getpid()
 hv.extension('plotly')
@@ -112,7 +114,8 @@ def run(event):
     n = show_time_process(list_of_mass)
     get_time_drying(n)
 
-    plot_mass = hv.Curve(list(list_of_mass), ('x', 'r_list'), ('y', 'mass')).opts(title="График изменения массы",  height=500,  bgcolor='black'). \
+    plot_mass = hv.Curve(list(list_of_mass), ('x', 'r_list'), ('y', 'mass')).opts( title="График изменения массы",   height=500,
+                                                                                   bgcolor='black'). \
         redim(x=hv.Dimension('Количество шагов', range=(0, fick_classes.n_t))). \
         redim(y=hv.Dimension('Масса спирта в образцах, кг', range=(list_of_mass[-1], list_of_mass[0])))
 
@@ -132,13 +135,12 @@ def run(event):
         list_of_curves.append(hv.Curve(df[['r_list', col]]))
 
     plot_conc = hv.Overlay(list_of_curves).opts(height=500, width=500, margin=dict(l=100, r=50, b=65, t=90),
-      title="График изменения концентрации", bgcolor= 'black', xlabel='Радиус, м', ylabel='Концентрация, кг/м3')
+      title="График изменения концентрации",  bgcolor= 'black', xlabel='Радиус, м', ylabel='Концентрация, кг/м3')
 
     template = "plotly_dark"
     plot_3d = go.Figure(data=[go.Surface(x=r_list, y=time, z=matrix_of_c)])
-    plot_3d.update_layout(title="График отображения 3D концентрации", template=template,  scene=dict(xaxis_title='Радиус, м',
-            yaxis_title='Время, с', zaxis_title='Концентрация спирта, кг/метр3'),
-                          width=500, height=500, margin=dict(l=100, r=50, b=65, t=90))
+    plot_3d.update_layout(title="График отображения 3D концентрации",  template=template,  scene=dict(xaxis_title='Радиус, м',yaxis_title='Время, с', zaxis_title='Концентрация спирта, кг/метр3'),
+                          width=500, height=500, margin=dict(l=100, r=50, b=65, t=90),  font=dict(family="Franklin Gothic", size=10))
 
     get_condition()
     work_process()

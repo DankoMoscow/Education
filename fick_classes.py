@@ -122,7 +122,7 @@ class scd_apparatus():
                 else:
                     for i in range(len(r)):
                         c_temp[1:-1] = c[1:-1] + self.diff_coef * dt * (
-                                    (c[2:] - 2 * c[1:-1] + c[0:-2]) / dr ** 2 + (c[2:] - c[0:-2]) / (
+                                    (c[2:] - 2 * c[1:-1] + c[0:-2]) / dr ** 2 +  (c[2:] - c[0:-2]) / (
                                         r[i] * dr))  # явная разностная схема с ЦКР работает
                     c_temp[-1] = c_bound
                     c_temp[0] = c_temp[1]
