@@ -63,7 +63,7 @@ button_exit = pn.widgets.Button(name='Нажмите для выхода', butto
 main_column = pn.Column('# Расчёт процесса сверхкритической сушки', float_width, float_length, float_height,
                         float_diff_coef, float_volume, float_flowrate, float_dt, \
                         int_number_samples, groups, static_text, static_cond, static_time,
-                        static_time_process, button, button_exit)
+                         static_time_process, button, button_exit)
 
 plot = hv.Curve([0]).opts(width=300)
 # общий виджет
@@ -84,7 +84,7 @@ def get_condition():
 
 
 def get_time_drying(n):
-    static_time_process.value = n * float_dt.value / 600
+    static_time_process.value = n * float_dt.value / 3600
 
 
 def work_process():
@@ -140,7 +140,7 @@ def run(event):
     template = "plotly_dark"
     plot_3d = go.Figure(data=[go.Surface(x=r_list, y=time, z=matrix_of_c)])
     plot_3d.update_layout(title="График отображения 3D концентрации",  template=template,  scene=dict(xaxis_title='Радиус, м',yaxis_title='Время, с', zaxis_title='Концентрация спирта, кг/метр3'),
-                          width=500, height=500, margin=dict(l=100, r=50, b=65, t=90),  font=dict(family="Franklin Gothic", size=10))
+                          width=500, height=500, margin=dict(l=10, r=20, b=35, t=30),  font=dict(family="Franklin Gothic", size=10))
 
     get_condition()
     work_process()
