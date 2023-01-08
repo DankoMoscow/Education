@@ -2,21 +2,17 @@ import panel as pn
 import holoviews as hv
 import panel.command
 import pandas as pd
-from bokeh.plotting import figure
-from holoviews import opts
 import numpy as np
 import fick_classes
 import os, sys
 import plotly.graph_objs as go
-from matplotlib import pyplot as plt
-from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from bokeh.models.formatters import PrintfTickFormatter
 import time
 import plotly.express as px
 from datetime import datetime
-# from holoviews import dim, opts
-# from holoviews.plotting.bokeh.styles import (line_properties, fill_properties, text_properties)
+import plotly.io as pio
+pio.templates
 
 pid = os.getpid()
 hv.extension('plotly')
@@ -113,34 +109,30 @@ def run(event):
 
     n = show_time_process(list_of_mass)
     get_time_drying(n)
+    template = "plotly_white"
+    x = list_of_mass
+    plot_mass = go.Figure(data = go.Scatter(y = x))
+    plot_mass.update_layout(title="График изменения массы", font = dict(family = "Overpass"), height=500,width=500, template = template,
+                      xaxis_title='Количество шагов', yaxis_title='Масса спирта в образцах, кг')
+    plot_mass.update_xaxes(gridcolor='LightPink')
+    plot_mass.update_yaxes(gridcolor='LightPink')
 
-    plot_mass = hv.Curve(list(list_of_mass), ('x', 'r_list'), ('y', 'mass')).opts( title="График изменения массы",   height=500,
-                                                                                   bgcolor='black'). \
-        redim(x=hv.Dimension('Количество шагов', range=(0, fick_classes.n_t))). \
-        redim(y=hv.Dimension('Масса спирта в образцах, кг', range=(list_of_mass[-1], list_of_mass[0])))
-
-    cols = []
-    list_of_curves = []
-    list_of_c = []
     time_ratio = 100
-    matrix_of_c = matrix_of_c.T
-    for l in matrix_of_c[:, ::time_ratio]:
-        list_of_c.append(l)
-    for col in range(len(list_of_c[0])):
-        cols.append(str(col))
-    df_x = pd.DataFrame(list_of_c, columns=cols)
-    df_y = pd.DataFrame(r_list, columns=['r_list'])
-    df = pd.concat([df_x, df_y], axis=1)
-    for col in df_x.columns:
-        list_of_curves.append(hv.Curve(df[['r_list', col]]))
+    plot_conc  = go.Figure()
+    for l,n in enumerate(matrix_of_c[::time_ratio]):
+        plot_conc.add_trace(go.Scatter(y=n, x = r_list,name=str(l)+' шаг'))
+    plot_conc.update_layout(title="График изменения концентрации", font = dict(family = "Overpass"), height=500,width=500,template = template,
+                      xaxis_title='Радиус образцов, м', yaxis_title='Концентрация спирта в образцах, кг/м3')
+    plot_conc.update_xaxes(gridcolor='LightPink')
+    plot_conc.update_yaxes(gridcolor='LightPink')
 
-    plot_conc = hv.Overlay(list_of_curves).opts(height=500, width=500, margin=dict(l=100, r=50, b=65, t=90),
-      title="График изменения концентрации",  bgcolor= 'black', xlabel='Радиус, м', ylabel='Концентрация, кг/м3')
-
-    template = "plotly_dark"
     plot_3d = go.Figure(data=[go.Surface(x=r_list, y=time, z=matrix_of_c)])
-    plot_3d.update_layout(title="График отображения 3D концентрации",  template=template,  scene=dict(xaxis_title='Радиус, м',yaxis_title='Время, с', zaxis_title='Концентрация спирта, кг/метр3'),
-                          width=500, height=500, margin=dict(l=10, r=20, b=35, t=30),  font=dict(family="Franklin Gothic", size=10))
+    plot_3d.update_layout(title="График отображения 3D концентрации", font = dict(family = "Overpass"), template = template, scene=dict(xaxis_title='Радиус, м',yaxis_title='Время, с',
+                zaxis_title='Концентрация спирта, кг/метр3', xaxis = dict(gridcolor='LightPink'), yaxis = dict(gridcolor='LightPink'), zaxis = dict(gridcolor='LightPink')),
+                          width=500, height=500, margin=dict(l=10, r=20, b=35, t=30))
+
+
+
 
     get_condition()
     work_process()
