@@ -9,7 +9,7 @@ from raschet import *
 num_steps = 100  # количество шагов
 l = np.empty(num_steps + 2, dtype=np.int16)
 
-proc_time = 100000
+proc_time = 10 * 3600
 c_bound = 0.
 c_init = 1.
 
