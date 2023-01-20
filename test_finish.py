@@ -4,11 +4,13 @@ import panel.command
 import pandas as pd
 import numpy as np
 import fick_classes
+import fick_classes_changed
 import os, sys
 import plotly.graph_objs as go
 from mpl_toolkits.mplot3d import Axes3D
 from bokeh.models.formatters import PrintfTickFormatter
 import time
+import bokeh
 import plotly.express as px
 from datetime import datetime
 import plotly.io as pio
@@ -96,7 +98,10 @@ def get_time():
 
 def show_time_process(list):
     condition_stop = list[0] * 0.05
+    # print(condition_stop)
+    # print(condition_stop/list[0])
     for n, value in enumerate(list):
+        #print(value/list[0])
         if value <= condition_stop:
             break
     return n
@@ -104,7 +109,7 @@ def show_time_process(list):
 def run(event):
     start_time = datetime.now()
     global main_window, float_width,float_dt, float_length, float_diff_coef, int_number_samples, podskazka, delta_time, cond_scheme
-    matrix_of_c, list_of_mass, c_app, time, i, r_list, podskazka, cond_scheme = fick_classes.main(float_width.value, float_length.value, float_height.value,
+    matrix_of_c, list_of_mass, c_app, time, i, r_list, podskazka, cond_scheme = fick_classes_changed.main(float_width.value, float_length.value, float_height.value,
         float_volume.value, float_flowrate.value, float_dt.value, float_diff_coef.value, int_number_samples.value, group_of_key.value, group_of_ways.value, static_text.value,static_cond.value)
 
     n = show_time_process(list_of_mass)
@@ -130,9 +135,6 @@ def run(event):
     plot_3d.update_layout(title="График отображения 3D концентрации", font = dict(family = "Overpass"), template = template, scene=dict(xaxis_title='Радиус, м',yaxis_title='Время, с',
                 zaxis_title='Концентрация спирта, кг/метр3', xaxis = dict(gridcolor='LightPink'), yaxis = dict(gridcolor='LightPink'), zaxis = dict(gridcolor='LightPink')),
                           width=500, height=500, margin=dict(l=10, r=20, b=35, t=30))
-
-
-
 
     get_condition()
     work_process()

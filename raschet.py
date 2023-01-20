@@ -1,4 +1,7 @@
 import math
+porosity = 0.95
+tau_izv = 5.5 #извилистость пор
+
 
 Vcr_ips = 220 #см3/моль - критический молярный объём ips
 Vcr_co2 = 94.07
@@ -28,8 +31,8 @@ nu_ips = (8.0765* 10**9 + 8.9165 * 10**6 * P)/(-2.8943 * 10**13 + 8.9749* 10**10
 print('Динамическая вязкость изопропанола',nu_ips)
 
 
-y_ips = 1. #массоваяя доля ипс
-x_ips = (y_ips * M_ips) / ((1 - y_ips)*M_co2 + y_ips * M_ips) #мольная доля изопропанола
+#y_ips = 1. #массоваяя доля ипс
+#x_ips = (y_ips * M_ips) / ((1 - y_ips)*M_co2 + y_ips * M_ips) #мольная доля изопропанола
 
 diff_coef_ips = (14.882 + 5.908 *(Tcr_co2*Vcr_co2)/(1000* M_co2) + 2.0821 * ((Tcr_co2*Vcr_co2)/(1000* M_co2))**2 )\
                 *10**(-9) *(T/M_ips)**0.5 * math.exp(-0.3887*Vcr_co2/(co2_volume_norm/Vcr_co2 - 0.23*Vcr_co2)) #коэффициент диффузии ипс в CO2
@@ -39,6 +42,6 @@ diff_coef_co2 = 8.93* 10**-9 *(co2_volume_norm/ips_volume_norm**2)** (1/6) * (Pa
 # TODO сделать плотность по Пенгу-Робинсону, пока что она будет по простому уравнению
 print('Коэффициент диффузии CO2 в ипс',diff_coef_co2)
 
-diff_coef = (diff_coef_co2 **x_ips) * (diff_coef_ips **(1-x_ips))
-print('Коэффициент диффузии итоговый',diff_coef)
+#diff_coef = (diff_coef_co2 **x_ips) * (diff_coef_ips **(1-x_ips))
+#print('Коэффициент диффузии итоговый',diff_coef)
 

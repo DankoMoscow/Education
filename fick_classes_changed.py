@@ -3,27 +3,18 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import os
+from raschet import *
 
-file_path = os.path.dirname(os.path.abspath(__file__))
-img_path = os.path.join(file_path, 'Images')
 
 num_steps = 100  # количество шагов
 l = np.empty(num_steps + 2, dtype=np.int16)
 
-# height = 0.02  # высота образца meters
-# R = height / 2  # meters
-# dr = R / num_steps  # шаг по радиусу meters
-
 proc_time = 100000
-
 c_bound = 0.
 c_init = 1.
 
-# c_r = np.zeros(num_steps + 2)
-# r = np.linspace(0, R, num_steps + 2)
-# c_init_list = np.zeros(num_steps + 2)
-
-
+density_ips = 785.1  # кг/м3
+density_co2 = 468  # кг/м3
 class scd_apparatus():
     def __init__(self, width, length, height, diff_coef, key, key_sch, number_samples):
         self.width = width
@@ -37,7 +28,8 @@ class scd_apparatus():
         self.matrix_of_c = np.zeros((n_t, len(self.c_init_list)))
         self.list_of_mass = np.zeros(n_t)
         self.c_app = np.zeros(n_t)
-
+        self.density_ips = 785.1 #кг/м3
+        self.density_co2 = 468 #кг/м3
 
         for i in range(num_steps + 2):
             self.c_init_list[i] = c_init
@@ -48,7 +40,7 @@ class scd_apparatus():
         print(
             f'width: {self.width}, length: {self.length}, diff_coef: {self.diff_coef}, number_samples: {self.number_samples}')
 
-    def fick_conc(self, c, c_bound, dr, dt, r):
+    def fick_conc(self,density, c, c_bound, dr, dt, r):
         global sverka_method
         sverka_method = 0
         stab_cond = dt / dr ** 2  # условие устойчивости
@@ -58,6 +50,7 @@ class scd_apparatus():
         betta_i[0] = 0  # прогоночный коэффициент бетта на нулевом шаге
         c_temp = []
         c_temp = np.copy(c)
+        y_ips = np.linspace(1, 0, num_steps + 2)
 
         if self.key == 'one_dim':
             if self.key_sch == 'explicit':
@@ -92,11 +85,42 @@ class scd_apparatus():
                     sverka_method = 5
                     pass
                 else:
+                    diff_coef_list = []
+                    density_new = []
+                    x_ips_list = []
+                    for i in range(len(y_ips)):
+                        density[i] = (y_ips[i] / density_ips + (1 - y_ips[i]) / density_co2) ** -1
+                        density_new.append(density)
+                    density[0] = density_ips
+                    density[-1] = density_co2
+                    # for i in range(len(y_ips)):
+                    #     x_ips = (y_ips[i] * M_ips) / ((1 - y_ips[i]) * M_co2 + y_ips[i] * M_ips)
+                    #     x_ips_list.append(x_ips)
+                    #
+                    # for k in range(len(x_ips_list)):
+                    #     diff_coef = (diff_coef_co2**x_ips_list[k] * diff_coef_ips**(1-x_ips_list[k]))
+                    #     diff_coef_list.append(diff_coef)
+                        # создаю список плотностей смеси и передаю его дальше
+
                     for i in range(len(r)):
-                        c_temp[1:-1] = c[1:-1] + self.diff_coef * dt * (
-                                    (c[2:] - 2 * c[1:-1] + c[0:-2]) / dr ** 2 + 1 / r[i] * (c[1:-1] - c[0:-2]) / dr)
+                        # TODO доделать уравнение с плотностью
+                        # result_high = []
+                        # result_low = []
+                        # for dt1, dt2 in zip(diff_coef_list[2:], density_new[2:]):
+                        #     result_high.append(dt1 * dt2)
+                        # for dt3, dt4 in zip(diff_coef_list[0:-2], density_new[0:-2]):
+                        #     result_low.append(dt3 * dt4)
+                        #c_temp[1:-1] = c[1:-1] + porosity * dt/(2* tau_izv* dr *r[i])*(result_high * r[2:] * (y_ips[2:]-y_ips[0:-2])/(2*dr) - result_low* r[0:-2] * (y_ips[2:]-y_ips[0:-2])/(2*dr))
+                        # c_temp[1:-1] = c[1:-1] + porosity * dt * self.diff_coef/ ( tau_izv * dr * r[i]) * (
+                        #     (density[2:] + density[1:-1])/2 * (r[2:] + r[i])/2 * (y_ips[2:] - y_ips[1:-1]) /  dr - (density[0:-2] + density[1:-1])/2 * (r[0:-2] + r[i])/2 * (y_ips[1:-1] - y_ips[0:-2]) /  dr)
+                        #density[1:-1] = (y_ips[i] / density_ips + (1 - y_ips[i]) / density_co2) ** -1
+                        #c_temp[1:-1] = c[1:-1] + porosity * dt * self.diff_coef/(tau_izv* dr *r[i]) * ((density[2:]-density[1:-1])/2 * (r[2:] + r[i])/2 ) #TODO хороший результат
+                        c_temp[1:-1] = c[1:-1] + porosity * dt * self.diff_coef /  (tau_izv * dr * r[i]) * \
+                                       ((density[2:] - density[1:-1]) / 2 * (r[2:] + r[i])/2 * (y_ips[2:] - y_ips[1:-1]) / dr -
+                                                                                                           (density[0:-2] - density[1:-1]) / 2 * (r[0:-2] + r[i])/2 * (y_ips[1:-1] - y_ips[0:-2]) / dr)
                     c_temp[-1] = c_bound
                     c_temp[0] = c_temp[1]
+
                     return c_temp
 
             elif self.key_sch == 'implicit':  # должна быть абсолютно устойчива это с ЛКР
@@ -157,23 +181,24 @@ class scd_apparatus():
 
         return m
 
-    def time_iteration(self, c_init_list, volume, flowrate, n_t, dt, dr, key, key_sch):
+    def time_iteration(self,density_init_list, c_init_list, volume, flowrate, n_t, dt, dr, key, key_sch):
         global method_value
         method_value = 0  # костыль для определения и не вылетания объёма аппарата
         c_app = np.zeros(n_t)
-        # volume = 0.00025 #кубические метры из диссертации
-        # flow_rate = 0.0000017 #кубических метров в секунду из диссертации
         residence_time = volume / flowrate
 
         c_matrix = np.zeros((n_t, len(c_init_list)))
+        density_matrix = np.zeros((n_t, len(density_init_list)))
+
         mass_list = np.zeros(n_t)
         c_matrix[0] = c_init_list
+        density_matrix[0] = density_init_list
 
         mass_list[0] = self.fick_mass(c_matrix[0], self.length, self.width)
         c_app[0] = 0.
         for i in range(1, n_t):
             c_bound = c_app[i - 1]
-            c_matrix[i] = self.fick_conc(c_matrix[i - 1], c_bound, dr, dt, r)
+            c_matrix[i] = self.fick_conc(density_matrix[i-1], c_matrix[i - 1], c_bound, dr, dt, r)
 
             if volume < self.number_samples * 4 / 3 * np.pi * (R) ** 3 and self.key == 'sphere':
                 method_value = 5
@@ -200,67 +225,24 @@ class scd_apparatus():
         return c_mixing
 
 
-"""    def plot_conc(self, r_list, time, c_list):
-        time_ratio = 100 #с какой частотой писать легенду для графика
-        plt.figure()
-        c_list = c_list.T
-        conc_fig = plt.plot(r_list, c_list[:, ::time_ratio])
-        plt.legend(iter(conc_fig), time[::time_ratio], loc = 1, fontsize = 8)
-        plt.title('Concentration change profile of alcohol', fontsize=18)
-        plt.xlabel('Radius, m')
-        plt.grid(True)
-        plt.ylabel('Concentration of alcohol')
-        return
-
-    def plot_mass(self, r_list, mass_list, legend_key):
-        plt.figure(2)
-        plt.plot(r_list, mass_list, label=legend_key)
-        plt.legend()
-        plt.title('Mass change profile of alcohol', fontsize=18)
-        plt.xlabel('Time, second')
-        plt.grid(True)
-        plt.ylabel('Mass of alcohol, kg')
-        return
-
-    def plot_3D(self, r_list, time, c_list, name):
-        fig = plt.figure(figsize=(7, 4))
-        xgrid, ygrid = np.meshgrid(r_list, time)
-        zgrid = c_list
-        ax_3d = Axes3D(fig)
-        fig.add_axes()
-        ax_3d.plot_surface(xgrid, ygrid, zgrid, cmap=cm.jet)
-        plt.title(('3D concentration ' + name), fontsize=12)
-        plt.xlabel('Radius, m')
-        plt.grid(True)
-        plt.ylabel('Time, second')
-        return
-
-    def ideal_mixing_plot(self, time, c_mixing):
-        plt.figure()
-        plt.plot(time, c_mixing)
-        plt.title('Concentration change profile of alcohol for ideal mixing', fontsize=16)
-        plt.xlabel('Time, second')
-        plt.grid(True)
-        plt.ylabel('Concentration of alcohol')
-        return    """
-
-
 def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples, value, key_sch, working, working_scheme):
     global n_t, R, dr, c_r, r
     R = height / 2  # meters
     dr = R / num_steps  # шаг по радиусу meters
     n_t = int(proc_time / dt) + 1  # количество шагов с учетом нулевого шага
+
     c_init_list = np.zeros(num_steps + 2)
+    density_init_list = np.zeros(num_steps+2)
 
     c_r = np.zeros(num_steps + 2)
     r = np.linspace(0, R, num_steps + 2)
-
+    # создаю равномерный список изменения TODO передаю его в fick_conc
     for i in range(num_steps + 2):
         c_init_list[i] = c_init
+        density_init_list[i] = density_ips
         if i == num_steps + 1:
             c_init_list[i] = 0
-
-    # img_path_key = os.path.join(img_path, str(i))
+            density_init_list[i] = density_co2
 
     object1 = scd_apparatus(width, length, height, diff_coef, value, key_sch, number_samples)
     object1.__str__()
@@ -271,15 +253,7 @@ def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples,
     key_sch = ['explicit', 'implicit']
     for i in value:
         for j in key_sch:
-            matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, volume, flowrate, n_t, dt, dr, key = i, key_sch = j)
+            matrix_of_c, list_of_mass, c_app = object1.time_iteration(density_init_list, c_init_list, volume, flowrate, n_t, dt, dr, key = i, key_sch = j)
 
-    """object1.plot_mass(time, list_of_mass, i)
-    plt.savefig("plot_mass.png")
-    object1.plot_conc(r_list, time-1, matrix_of_c)
-    plt.savefig("plot_conc.png")
-    object1.ideal_mixing_plot(time, c_app)
-    plt.savefig("plot_mixing.png")
-    object1.plot_3D(r_list, time, matrix_of_c, str(i))
-    plt.savefig("plot_3D.png")"""
     print(sverka_method)
     return matrix_of_c, list_of_mass, c_app, time, i, r, method_value, sverka_method
