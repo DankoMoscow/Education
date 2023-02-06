@@ -65,7 +65,7 @@ main_column = pn.Column('# Расчёт процесса сверхкритич�
 
 plot = hv.Curve([0]).opts(width=300)
 # общий виджет
-main_window = pn.Row(pn.Spacer(width=100), main_column, pn.Spacer(width=50), plot, pn.Spacer(width=50), pn.Spacer(width=50), sizing_mode='stretch_width')
+main_window = pn.Row(pn.Spacer(width=100), main_column, pn.Spacer(width=50), plot, sizing_mode='stretch_width')
 
 
 def onClose(event):
@@ -98,8 +98,6 @@ def get_time():
 
 def show_time_process(list):
     condition_stop = list[0] * 0.05
-    # print(condition_stop)
-    # print(condition_stop/list[0])
     for n, value in enumerate(list):
         #print(value/list[0])
         if value <= condition_stop:
@@ -109,16 +107,16 @@ def show_time_process(list):
 def run(event):
     start_time = datetime.now()
     global main_window, float_width,float_dt, float_length, float_diff_coef, int_number_samples, podskazka, delta_time, cond_scheme
-    matrix_of_c, list_of_mass, c_app, time, i, r_list, podskazka, cond_scheme = fick_classes_changed.main(float_width.value, float_length.value, float_height.value,
+    matrix_of_c, list_of_mass, c_app, time, i, r_list, podskazka, cond_scheme = fick_classes.main(float_width.value, float_length.value, float_height.value,
         float_volume.value, float_flowrate.value, float_dt.value, float_diff_coef.value, int_number_samples.value, group_of_key.value, group_of_ways.value, static_text.value,static_cond.value)
 
     n = show_time_process(list_of_mass)
     get_time_drying(n)
     template = "plotly_white"
-    x = list_of_mass
-    plot_mass = go.Figure(data = go.Scatter(y = x))
+
+    plot_mass = go.Figure(data = go.Scatter(y = list_of_mass, x = time/3600))
     plot_mass.update_layout(title="График изменения массы", font = dict(family = "Overpass"), height=500,width=500, template = template,
-                      xaxis_title='Количество шагов', yaxis_title='Масса спирта в образцах, кг')
+                      xaxis_title= 'Время, ч', yaxis_title='Масса спирта в образцах, кг')
     plot_mass.update_xaxes(gridcolor='LightPink')
     plot_mass.update_yaxes(gridcolor='LightPink')
 
@@ -138,12 +136,14 @@ def run(event):
 
     get_condition()
     work_process()
-    main_window[0] = main_column
-    main_window[1] = plot_mass
-    main_window[2] = pn.Spacer(width = 10)
-    main_window[3] = plot_conc
-    main_window[4] = pn.Spacer(width = 10)
-    main_window[5] = plot_3d
+    plots = pn.Row(pn.Spacer(width=100), plot_mass, pn.Spacer(width=50), plot_conc, pn.Spacer(width=50), sizing_mode='stretch_width')
+    plot_3d_main = pn.Row(pn.Spacer(width = 100), plot_3d, pn.Spacer( width = 50))
+    main_plots = pn.Column(plots, plot_3d_main,  sizing_mode='stretch_width')
+    main_window[0] = pn.Spacer (width = 10)
+    main_window[1] = main_column
+    main_window[2] = pn.Spacer (width = 10)
+    main_window[3] = main_plots
+
 
     end_time = datetime.now()
     delta_time = end_time - start_time
