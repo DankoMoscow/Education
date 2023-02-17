@@ -1,10 +1,9 @@
 import panel as pn
 import holoviews as hv
 import panel.command
-import pandas as pd
-import numpy as np
+#import numpy
 import fick_classes
-import fick_classes_changed
+#import fick_classes_changed
 import os, sys
 import plotly.graph_objs as go
 from mpl_toolkits.mplot3d import Axes3D
@@ -14,6 +13,7 @@ import bokeh
 import plotly.express as px
 from datetime import datetime
 import plotly.io as pio
+
 pio.templates
 
 pid = os.getpid()

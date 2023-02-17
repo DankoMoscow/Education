@@ -3,6 +3,58 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import os
+import math
+
+
+porosity = 0.95
+tau_izv = 5.5 #извилистость пор
+
+Vcr_ips = 220 #см3/моль - критический молярный объём ips
+Vcr_co2 = 94.07
+Pcr_ips = 47.62 #критическаое давлние ипс бар
+Pcr_co2 = 73.74
+
+T = 333.15 #температура в кельвинах
+P = 120 #давление в барах
+
+PSI_ips = 0.665 #ацентрический фактор ипс
+PSI_co2 = 0.225
+
+Par_ips = 164.4 #парахора ипс
+Par_co2 = 44.8
+
+ips_volume_norm = 0.285*Vcr_ips**1.048 #нормальный молярынй объём ипс
+co2_volume_norm = 0.285*Vcr_co2**1.048
+
+M_ips = 60.09 #г на см3
+M_co2 = 44.01
+
+Tcr_ips = 508.3 #критическая температура ипс
+Tcr_co2 = 304.12
+
+a1 = 8.07652E+15
+a2 = 8.91648E+13
+a3 = -2.89429E+13
+a4 = 89749140000
+a5 = 230022.4
+dynamic_viscosity_ips = (a1 + a2 * P / 10) / (a3 + a4 * T + a5 * T ** 3 + P / 10) / 1000000
+
+D_coef_co2_ips = 8.93*10**(-12)*(co2_volume_norm/ips_volume_norm**2)**(1/6)*(Par_ips/Par_co2)**0.6*T/(dynamic_viscosity_ips*1000)    #коэфф диффузии co2 in ips
+
+density_co2_coef=14258.88822-84.97903074*T+11.30377033*P+0.017974145*T*P+0.135119422*T**2-0.071358164*P**2-4.73474E-05*T**3+0.000110024*P**3
+koef = Tcr_co2*Vcr_co2/(1000*M_co2)
+A_coef = 14.882+5.908*koef+2.0821*koef**2
+Vmol_co2 = M_co2/density_co2_coef * 1000 # Молярный объем диоксида углерода при норм температуре кипения, см3/моль
+Vv_co2=Vmol_co2/Vcr_co2
+
+D_coef_ips_co2 = A_coef * 10**(-9)*(T/M_ips)**0.5*math.exp(-0.3887/(Vv_co2-0.23))  #коэффициент диффузии ипс в CO2
+
+y_ips = np.linspace(1, 0, 102)
+
+density_ips = 785.1  # кг/м3
+density_co2 = 468  # кг/м3
+
+
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 img_path = os.path.join(file_path, 'Images')
@@ -10,18 +62,10 @@ img_path = os.path.join(file_path, 'Images')
 num_steps = 100  # количество шагов
 l = np.empty(num_steps + 2, dtype=np.int16)
 
-# height = 0.02  # высота образца meters
-# R = height / 2  # meters
-# dr = R / num_steps  # шаг по радиусу meters
 
-proc_time = 100000
-
+proc_time = 15*3600
 c_bound = 0.
 c_init = 1.
-
-# c_r = np.zeros(num_steps + 2)
-# r = np.linspace(0, R, num_steps + 2)
-# c_init_list = np.zeros(num_steps + 2)
 
 
 class scd_apparatus():
@@ -47,6 +91,18 @@ class scd_apparatus():
     def __str__(self):
         print(
             f'width: {self.width}, length: {self.length}, diff_coef: {self.diff_coef}, number_samples: {self.number_samples}')
+
+    """
+    эта функция отвечает за создание коэффициента диффузии в зависимости от массовой доли
+    """
+    def diffusion(self, x):
+        diff_coef = (D_coef_co2_ips ** x) * (D_coef_ips_co2 ** (1 - x))
+        return diff_coef
+
+    def density(selfself, ro):
+        density = (ro / density_ips + (1 - ro) / density_co2) ** -1
+        return density
+
 
     def fick_conc(self, c, c_bound, dr, dt, r):
         global sverka_method
@@ -92,9 +148,26 @@ class scd_apparatus():
                     sverka_method = 5
                     pass
                 else:
-                    for i in range(len(r)):
-                        c_temp[1:-1] = c[1:-1] + self.diff_coef * dt * (
-                                    (c[2:] - 2 * c[1:-1] + c[0:-2]) / dr ** 2 + 1 / r[i] * (c[1:-1] - c[0:-2]) / dr)
+                    for i in range(1, len(r) - 1):
+                        x_ips_past = (y_ips[i-1] * M_ips) / ((1 - y_ips[i-1]) * M_co2 + y_ips[i-1] * M_ips)
+                        x_ips_now = (y_ips[i] * M_ips) / ((1 - y_ips[i]) * M_co2 + y_ips[i] * M_ips)
+                        x_ips_fut = (y_ips[i+1] * M_ips) / ((1 - y_ips[i+1]) * M_co2 + y_ips[i+1] * M_ips)
+
+                        density_past = self.density(y_ips[i-1])
+                        density_now = self.density(y_ips[i])
+                        density_fut = self.density(y_ips[i + 1])
+
+                        diff_coef_past = self.diffusion(x_ips_past)
+                        diff_coef_now = self.diffusion(x_ips_now)
+                        diff_coef_fut = self.diffusion(x_ips_fut)
+
+                        #c_temp[1:-1] = c[1:-1] + self.diff_coef * dt * ((c[2:] - 2 * c[1:-1] + c[0:-2]) / dr ** 2 + 1 / r[i] * (c[1:-1] - c[0:-2]) / dr)
+                        c_temp[1:-1] = c[1:-1] + porosity * dt / (tau_izv * dr * r[i]) * \
+                                   ((diff_coef_fut + diff_coef_now) / 2  * (density_fut + density_now) /2 * (r[i+1] + r[i]) / 2 * (
+                                            y_ips[i+1] - y_ips[i]) / dr - (
+                                            diff_coef_past + diff_coef_now) / 2 * (density_past + density_now) /2 * (r[i-1] + r[i]) / 2 * (
+                                            y_ips[i] - y_ips[i-1]) / dr)
+
                     c_temp[-1] = c_bound
                     c_temp[0] = c_temp[1]
                     return c_temp
@@ -107,6 +180,7 @@ class scd_apparatus():
                 for i in range(1, len(l)):
                     alfa_i[i] = (-a) / (b + c_koef * alfa_i[i - 1])
                     betta_i[i] = (c[i] - c_koef * betta_i[i - 1]) / (b + c_koef * alfa_i[i - 1])
+
                 alfa_i[-1] = 0
                 betta_i[-1] = 0
                 c_temp[1:-1] = c[2:] * alfa_i[1:-1] + betta_i[1:-1]
@@ -144,6 +218,7 @@ class scd_apparatus():
                 c_temp[-1] = c_bound
                 c_temp[0] = c_temp[1]
                 return c_temp
+
 
     def fick_mass(self, c, length, width):
         m = 0.
@@ -199,52 +274,6 @@ class scd_apparatus():
         c_mixing = c + dt / residence_time * (c_inlet - c) + dt * delta_mass / volume
         return c_mixing
 
-
-"""    def plot_conc(self, r_list, time, c_list):
-        time_ratio = 100 #с какой частотой писать легенду для графика
-        plt.figure()
-        c_list = c_list.T
-        conc_fig = plt.plot(r_list, c_list[:, ::time_ratio])
-        plt.legend(iter(conc_fig), time[::time_ratio], loc = 1, fontsize = 8)
-        plt.title('Concentration change profile of alcohol', fontsize=18)
-        plt.xlabel('Radius, m')
-        plt.grid(True)
-        plt.ylabel('Concentration of alcohol')
-        return
-
-    def plot_mass(self, r_list, mass_list, legend_key):
-        plt.figure(2)
-        plt.plot(r_list, mass_list, label=legend_key)
-        plt.legend()
-        plt.title('Mass change profile of alcohol', fontsize=18)
-        plt.xlabel('Time, second')
-        plt.grid(True)
-        plt.ylabel('Mass of alcohol, kg')
-        return
-
-    def plot_3D(self, r_list, time, c_list, name):
-        fig = plt.figure(figsize=(7, 4))
-        xgrid, ygrid = np.meshgrid(r_list, time)
-        zgrid = c_list
-        ax_3d = Axes3D(fig)
-        fig.add_axes()
-        ax_3d.plot_surface(xgrid, ygrid, zgrid, cmap=cm.jet)
-        plt.title(('3D concentration ' + name), fontsize=12)
-        plt.xlabel('Radius, m')
-        plt.grid(True)
-        plt.ylabel('Time, second')
-        return
-
-    def ideal_mixing_plot(self, time, c_mixing):
-        plt.figure()
-        plt.plot(time, c_mixing)
-        plt.title('Concentration change profile of alcohol for ideal mixing', fontsize=16)
-        plt.xlabel('Time, second')
-        plt.grid(True)
-        plt.ylabel('Concentration of alcohol')
-        return    """
-
-
 def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples, value, key_sch, working, working_scheme):
     global n_t, R, dr, c_r, r
     R = height / 2  # meters
@@ -260,7 +289,6 @@ def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples,
         if i == num_steps + 1:
             c_init_list[i] = 0
 
-    # img_path_key = os.path.join(img_path, str(i))
 
     object1 = scd_apparatus(width, length, height, diff_coef, value, key_sch, number_samples)
     object1.__str__()
@@ -273,13 +301,5 @@ def main(width, length, height, volume, flowrate, dt, diff_coef, number_samples,
         for j in key_sch:
             matrix_of_c, list_of_mass, c_app = object1.time_iteration(c_init_list, volume, flowrate, n_t, dt, dr, key = i, key_sch = j)
 
-    """object1.plot_mass(time, list_of_mass, i)
-    plt.savefig("plot_mass.png")
-    object1.plot_conc(r_list, time-1, matrix_of_c)
-    plt.savefig("plot_conc.png")
-    object1.ideal_mixing_plot(time, c_app)
-    plt.savefig("plot_mixing.png")
-    object1.plot_3D(r_list, time, matrix_of_c, str(i))
-    plt.savefig("plot_3D.png")"""
     print(sverka_method)
     return matrix_of_c, list_of_mass, c_app, time, i, r, method_value, sverka_method
